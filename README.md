@@ -9,7 +9,7 @@
 git clone https://github.com/XuYuen0820/THE_AJKS-MAP-Project.git
 
 # Navigate into the project folder
-cd Exora
+
 
 # Install dependencies
 flutter pub get

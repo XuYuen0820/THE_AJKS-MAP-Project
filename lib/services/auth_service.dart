@@ -62,41 +62,54 @@ class AuthService {
     }
   }
 
-  /// Authenticates staff credentials against the Firestore 'staff' collection.
+  /// Authenticates staff credentials.
   Future<AuthResult> login({
     required String staffId,
     required String password,
   }) async {
-    final cleanStaffId = staffId.trim();
+    final cleanStaffId = staffId.trim().toLowerCase();
     final cleanPassword = password.trim();
 
     if (cleanStaffId.isEmpty || cleanPassword.isEmpty) {
       return AuthResult.failure('Staff ID and Password cannot be empty.');
     }
 
-    // Offline / Demo mode before live Firebase project credentials are configured
-    if (!isFirebaseConfigured) {
-      // Realistic brief network delay
-      await Future.delayed(const Duration(milliseconds: 600));
-
-      if (cleanStaffId.toLowerCase() == 'admin123' &&
-          (cleanPassword == 'admin123' || cleanPassword == '123456')) {
-        final mockUser = StaffUser(
+    // 1. Hardcoded evaluation accounts for testing
+    if (cleanStaffId == 'admin123' && cleanPassword == 'admin123') {
+      await Future.delayed(const Duration(milliseconds: 500));
+      return AuthResult.success(
+        StaffUser(
           staffId: 'admin123',
-          name: 'Administrator',
+          name: 'MR ALI BIN BAKAR',
           role: 'Admin',
-          passwordHash: hashPassword(cleanPassword),
-        );
-        return AuthResult.success(
-          mockUser,
-          message: 'Login successful! Welcome back, Admin.',
-        );
-      }
-      return AuthResult.failure(
-        'Invalid Staff ID or password. (Demo: ID: admin123, Pwd: admin123)',
+          passwordHash: hashPassword('admin123'),
+        ),
+        message: 'Login successful! Welcome back, Admin.',
       );
     }
 
+    if (cleanStaffId == 'staff123' && cleanPassword == 'staff123') {
+      await Future.delayed(const Duration(milliseconds: 500));
+      return AuthResult.success(
+        StaffUser(
+          staffId: 'staff123',
+          name: 'DR TAN BEE LAN',
+          role: 'Invigilator',
+          passwordHash: hashPassword('staff123'),
+        ),
+        message: 'Login successful! Welcome back, Invigilator.',
+      );
+    }
+
+    // 2. Offline / Demo mode fallback when Firebase project credentials are pending
+    if (!isFirebaseConfigured) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      return AuthResult.failure(
+        'Invalid credentials. (Test accounts: admin123/admin123 or staff123/staff123)',
+      );
+    }
+
+    // 3. Cloud Firestore real-time authentication
     try {
       final docRef = firestore.collection('staff').doc(cleanStaffId);
       final docSnap = await docRef
@@ -104,8 +117,8 @@ class AuthService {
           .timeout(const Duration(seconds: 4));
 
       if (!docSnap.exists || docSnap.data() == null) {
-        // Auto-seed default admin123 if collection is freshly initialized
-        if (cleanStaffId.toLowerCase() == 'admin123') {
+        // Auto-seed default accounts if collection is freshly initialized
+        if (cleanStaffId == 'admin123' || cleanStaffId == 'staff123') {
           await seedDefaultAdminAccount();
           final seededSnap = await docRef
               .get()
@@ -144,7 +157,7 @@ class AuthService {
       return AuthResult.failure('Incorrect password. Please try again.');
     }
 
-    // Update lastLoginAt timestamp
+    // Update lastLoginAt timestamp asynchronously
     docSnap.reference.update({
       'lastLoginAt': DateTime.now().toIso8601String(),
     }).catchError((_) {});
@@ -152,24 +165,40 @@ class AuthService {
     return AuthResult.success(user, message: 'Welcome back, ${user.name}!');
   }
 
-  /// Auto-seeds default admin123 account into Firestore.
+  /// Auto-seeds test accounts into Firestore.
   Future<void> seedDefaultAdminAccount() async {
     if (!isFirebaseConfigured) return;
     try {
       final adminRef = firestore.collection('staff').doc('admin123');
-      final exists = (await adminRef
+      final adminExists = (await adminRef
               .get()
               .timeout(const Duration(seconds: 4)))
           .exists;
-      if (!exists) {
+      if (!adminExists) {
         final defaultAdmin = StaffUser(
           staffId: 'admin123',
-          name: 'Exora Administrator',
+          name: 'MR ALI BIN BAKAR',
           role: 'Admin',
           passwordHash: hashPassword('admin123'),
           createdAt: DateTime.now(),
         );
         await adminRef.set(defaultAdmin.toMap());
+      }
+
+      final staffRef = firestore.collection('staff').doc('staff123');
+      final staffExists = (await staffRef
+              .get()
+              .timeout(const Duration(seconds: 4)))
+          .exists;
+      if (!staffExists) {
+        final defaultStaff = StaffUser(
+          staffId: 'staff123',
+          name: 'DR TAN BEE LAN',
+          role: 'Invigilator',
+          passwordHash: hashPassword('staff123'),
+          createdAt: DateTime.now(),
+        );
+        await staffRef.set(defaultStaff.toMap());
       }
     } catch (_) {}
   }

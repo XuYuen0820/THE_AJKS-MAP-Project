@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../constants/app_colors.dart';
+import '../models/staff_user.dart';
 import '../services/auth_service.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/exora_logo.dart';
+import '../widgets/success_card.dart';
+import 'admin_page.dart';
+import 'invigilator_page.dart';
 
 /// Exora Staff Login Screen matching Figma specification.
 class LoginPage extends StatefulWidget {
@@ -23,6 +27,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isSuccess = false;
+  StaffUser? _authenticatedUser;
 
   @override
   void dispose() {
@@ -52,16 +58,36 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result.message),
-        backgroundColor: result.isSuccess
-            ? AppColors.primaryBlue
-            : AppColors.errorRed,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+    if (result.isSuccess && result.user != null) {
+      setState(() {
+        _isSuccess = true;
+        _authenticatedUser = result.user;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: AppColors.errorRed,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
+  }
+
+  void _handleContinue() {
+    if (_authenticatedUser == null) return;
+    if (_authenticatedUser!.role.toLowerCase() == 'admin') {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => AdminPage(user: _authenticatedUser!)),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => InvigilatorPage(user: _authenticatedUser!),
+        ),
+      );
+    }
   }
 
   void _handleForgotPassword() {
@@ -140,151 +166,37 @@ class _LoginPageState extends State<LoginPage> {
                                   ],
                                 ),
                                 padding: const EdgeInsets.all(24.0),
-                                child: Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Card Header (Center aligned)
-                                      const SizedBox(
-                                        width: double.infinity,
+                                child: _isSuccess
+                                    ? SuccessCard(onContinue: _handleContinue)
+                                    : Form(
+                                        key: _formKey,
                                         child: Column(
                                           crossAxisAlignment:
-                                              CrossAxisAlignment.center,
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              'Login',
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                fontSize: 32,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.textHeadline,
-                                                letterSpacing: -0.5,
-                                              ),
-                                            ),
-                                            SizedBox(height: 6),
-                                            Text(
-                                              'Welcome To Exora!',
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                                color: AppColors.textMuted,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 24),
-
-                                      // Staff ID Field
-                                      CustomTextField(
-                                        label: 'Staff ID',
-                                        hintText: 'admin123',
-                                        controller: _staffIdController,
-                                        fieldKey: const Key('staff_id_field'),
-                                        validator: (val) {
-                                          if (val == null ||
-                                              val.trim().isEmpty) {
-                                            return 'Please enter your Staff ID';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 16),
-
-                                      // Password Field
-                                      CustomTextField(
-                                        label: 'Password',
-                                        hintText: '••••••••',
-                                        controller: _passwordController,
-                                        obscureText: _obscurePassword,
-                                        textInputAction: TextInputAction.done,
-                                        fieldKey: const Key('password_field'),
-                                        suffixIcon: IconButton(
-                                          key: const Key(
-                                            'password_toggle_button',
-                                          ),
-                                          icon: SvgPicture.asset(
-                                            'assets/images/eye_off.svg',
-                                            width: 18,
-                                            height: 18,
-                                            colorFilter: ColorFilter.mode(
-                                              _obscurePassword
-                                                  ? AppColors.textMuted
-                                                  : AppColors.primaryBlue,
-                                              BlendMode.srcIn,
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _obscurePassword =
-                                                  !_obscurePassword;
-                                            });
-                                          },
-                                        ),
-                                        validator: (val) {
-                                          if (val == null ||
-                                              val.trim().isEmpty) {
-                                            return 'Please enter your password';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 16),
-
-                                      // Remember Me & Forgot Password Row
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: Wrap(
-                                          alignment: WrapAlignment.spaceBetween,
-                                          crossAxisAlignment:
-                                              WrapCrossAlignment.center,
-                                          runSpacing: 8,
-                                          children: [
-                                            GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  _rememberMe = !_rememberMe;
-                                                });
-                                              },
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
+                                            // Card Header (Center aligned)
+                                            const SizedBox(
+                                              width: double.infinity,
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
                                                 children: [
-                                                  SizedBox(
-                                                    width: 20,
-                                                    height: 20,
-                                                    child: Checkbox(
-                                                      key: const Key(
-                                                        'remember_me_checkbox',
-                                                      ),
-                                                      value: _rememberMe,
-                                                      onChanged: (val) {
-                                                        setState(() {
-                                                          _rememberMe =
-                                                              val ?? false;
-                                                        });
-                                                      },
-                                                      activeColor:
-                                                          AppColors.primaryBlue,
-                                                      shape: RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              4,
-                                                            ),
-                                                      ),
-                                                      side: const BorderSide(
-                                                        color: Color(
-                                                          0xFFD1D5DB,
-                                                        ),
-                                                        width: 1.2,
-                                                      ),
+                                                  Text(
+                                                    'Login',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontSize: 32,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: AppColors
+                                                          .textHeadline,
+                                                      letterSpacing: -0.5,
                                                     ),
                                                   ),
-                                                  const SizedBox(width: 8),
-                                                  const Text(
-                                                    'Remember me',
+                                                  SizedBox(height: 6),
+                                                  Text(
+                                                    'Welcome To Exora!',
+                                                    textAlign: TextAlign.center,
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                       fontWeight:
@@ -296,35 +208,173 @@ class _LoginPageState extends State<LoginPage> {
                                                 ],
                                               ),
                                             ),
-                                            GestureDetector(
-                                              key: const Key(
-                                                'forgot_password_button',
+                                            const SizedBox(height: 24),
+
+                                            // Staff ID Field
+                                            CustomTextField(
+                                              label: 'Staff ID',
+                                              hintText: 'admin123',
+                                              controller: _staffIdController,
+                                              fieldKey: const Key(
+                                                'staff_id_field',
                                               ),
-                                              onTap: _handleForgotPassword,
-                                              child: const Text(
-                                                'Forgot Password ?',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: AppColors.linkBlue,
+                                              validator: (val) {
+                                                if (val == null ||
+                                                    val.trim().isEmpty) {
+                                                  return 'Please enter your Staff ID';
+                                                }
+                                                return null;
+                                              },
+                                            ),
+                                            const SizedBox(height: 16),
+
+                                            // Password Field
+                                            CustomTextField(
+                                              label: 'Password',
+                                              hintText: '••••••••',
+                                              controller: _passwordController,
+                                              obscureText: _obscurePassword,
+                                              textInputAction:
+                                                  TextInputAction.done,
+                                              fieldKey: const Key(
+                                                'password_field',
+                                              ),
+                                              suffixIcon: IconButton(
+                                                key: const Key(
+                                                  'password_toggle_button',
                                                 ),
+                                                icon: SvgPicture.asset(
+                                                  'assets/images/eye_off.svg',
+                                                  width: 18,
+                                                  height: 18,
+                                                  colorFilter: ColorFilter.mode(
+                                                    _obscurePassword
+                                                        ? AppColors.textMuted
+                                                        : AppColors.primaryBlue,
+                                                    BlendMode.srcIn,
+                                                  ),
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _obscurePassword =
+                                                        !_obscurePassword;
+                                                  });
+                                                },
+                                              ),
+                                              validator: (val) {
+                                                if (val == null ||
+                                                    val.trim().isEmpty) {
+                                                  return 'Please enter your password';
+                                                }
+                                                return null;
+                                              },
+                                            ),
+                                            const SizedBox(height: 16),
+
+                                            // Remember Me & Forgot Password Row
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: Wrap(
+                                                alignment:
+                                                    WrapAlignment.spaceBetween,
+                                                crossAxisAlignment:
+                                                    WrapCrossAlignment.center,
+                                                runSpacing: 8,
+                                                children: [
+                                                  GestureDetector(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        _rememberMe =
+                                                            !_rememberMe;
+                                                      });
+                                                    },
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        SizedBox(
+                                                          width: 20,
+                                                          height: 20,
+                                                          child: Checkbox(
+                                                            key: const Key(
+                                                              'remember_me_checkbox',
+                                                            ),
+                                                            value: _rememberMe,
+                                                            onChanged: (val) {
+                                                              setState(() {
+                                                                _rememberMe =
+                                                                    val ??
+                                                                    false;
+                                                              });
+                                                            },
+                                                            activeColor:
+                                                                AppColors
+                                                                    .primaryBlue,
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    4,
+                                                                  ),
+                                                            ),
+                                                            side:
+                                                                const BorderSide(
+                                                                  color: Color(
+                                                                    0xFFD1D5DB,
+                                                                  ),
+                                                                  width: 1.2,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        const Text(
+                                                          'Remember me',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: AppColors
+                                                                .textMuted,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  GestureDetector(
+                                                    key: const Key(
+                                                      'forgot_password_button',
+                                                    ),
+                                                    onTap:
+                                                        _handleForgotPassword,
+                                                    child: const Text(
+                                                      'Forgot Password ?',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color:
+                                                            AppColors.linkBlue,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 24),
+
+                                            // Log In Action Button
+                                            CustomButton(
+                                              text: 'Log In',
+                                              isLoading: _isLoading,
+                                              onPressed: _handleLogin,
+                                              buttonKey: const Key(
+                                                'login_button',
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(height: 24),
-
-                                      // Log In Action Button
-                                      CustomButton(
-                                        text: 'Log In',
-                                        isLoading: _isLoading,
-                                        onPressed: _handleLogin,
-                                        buttonKey: const Key('login_button'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
                             ],
                           ),

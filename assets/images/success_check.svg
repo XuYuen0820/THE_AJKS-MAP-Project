@@ -1,0 +1,17 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="94.158" height="95.9023" viewBox="0 0 94.158 95.9023" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 2">
+<g id="Ellipse 1">
+<ellipse cx="47.079" cy="47.9511" rx="47.079" ry="47.9511" fill="#FF8D4D" fill-opacity="0.06"/>
+<mask id="stroke0_0_5" fill="white">
+<path d="M94.158 47.9511C94.158 74.4338 73.08 95.9023 47.079 95.9023C21.078 95.9023 0 74.4338 0 47.9511C0 21.4685 21.078 0 47.079 0C73.08 0 94.158 21.4685 94.158 47.9511Z"/>
+</mask>
+<ellipse cx="47.079" cy="47.9511" rx="47.079" ry="47.9511" stroke-width="6" stroke="url(#paint0_linear_0_5)" mask="url(#stroke0_0_5)"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_5" x1="47.079" y1="0" x2="47.079" y2="95.9023" gradientUnits="userSpaceOnUse">
+<stop stop-color="#0000FF"/>
+<stop offset="1" stop-color="#0000FF"/>
+</linearGradient>
+</defs>
+</svg>

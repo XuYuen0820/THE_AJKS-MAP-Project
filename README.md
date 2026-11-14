@@ -22,3 +22,13 @@ flutter pub get
 flutter run -d chrome --web-port=8080
 ```
 > Press `F12` in Chrome and switch to the **Device Toolbar** (`Ctrl + Shift + M`) to preview the mobile layout.
+
+### 3. Demo Account
+
+```bash
+Staff Id: admin123
+Password: admin123
+
+Staff Id: staff123
+Password: staff123
+```

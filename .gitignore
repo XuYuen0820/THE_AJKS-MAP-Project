@@ -38,3 +38,6 @@ Thumbs.db
 
 # iOS artifacts
 **/ios/Flutter/.last_build_id
+
+pubspec.lock
+Exora/

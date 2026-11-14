@@ -9,9 +9,7 @@
 git clone https://github.com/XuYuen0820/THE_AJKS-MAP-Project.git
 
 # Navigate into the project folder
-
-
-# Install dependencies
+cd THE_AJKS-MAP-Project# Install dependencies
 flutter pub get
 ```
 

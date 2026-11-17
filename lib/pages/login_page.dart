@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../constants/app_colors.dart';
-import '../models/staff_user.dart';
 import '../services/auth_service.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/exora_logo.dart';
-import '../widgets/success_card.dart';
-import 'admin_page.dart';
-import 'invigilator_page.dart';
 import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -21,18 +17,15 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _staffIdController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
-  bool _isSuccess = false;
-  StaffUser? _authenticatedUser;
 
   @override
   void dispose() {
-    _staffIdController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -44,11 +37,11 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = true;
     });
 
-    final staffId = _staffIdController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     final result = await AuthService().login(
-      staffId: staffId,
+      email: email,
       password: password,
     );
 
@@ -58,36 +51,18 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = false;
     });
 
-    if (result.isSuccess && result.user != null) {
-      setState(() {
-        _isSuccess = true;
-        _authenticatedUser = result.user;
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.message),
-          backgroundColor: AppColors.errorRed,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
+    if (result.isSuccess) {
+      return;
     }
-  }
 
-  void _handleContinue() {
-    if (_authenticatedUser == null) return;
-    if (_authenticatedUser!.role.toLowerCase() == 'admin') {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => AdminPage(user: _authenticatedUser!)),
-      );
-    } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => InvigilatorPage(user: _authenticatedUser!),
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.message),
+        backgroundColor: AppColors.errorRed,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
   }
 
   void _handleForgotPassword() {
@@ -161,11 +136,9 @@ class _LoginPageState extends State<LoginPage> {
                                   ],
                                 ),
                                 padding: const EdgeInsets.all(24.0),
-                                child: _isSuccess
-                                    ? SuccessCard(onContinue: _handleContinue)
-                                    : Form(
-                                        key: _formKey,
-                                        child: Column(
+                                child: Form(
+                                  key: _formKey,
+                                  child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
@@ -205,18 +178,20 @@ class _LoginPageState extends State<LoginPage> {
                                             ),
                                             const SizedBox(height: 24),
 
-                                            // Staff ID Field
+                                            // Email Field
                                             CustomTextField(
-                                              label: 'Staff ID',
-                                              hintText: 'admin123',
-                                              controller: _staffIdController,
+                                              label: 'Email',
+                                              hintText: 'name@example.com',
+                                              controller: _emailController,
+                                              keyboardType:
+                                                  TextInputType.emailAddress,
                                               fieldKey: const Key(
-                                                'staff_id_field',
+                                                'email_field',
                                               ),
                                               validator: (val) {
                                                 if (val == null ||
                                                     val.trim().isEmpty) {
-                                                  return 'Please enter your Staff ID';
+                                                  return 'Please enter your email';
                                                 }
                                                 return null;
                                               },
@@ -276,64 +251,13 @@ class _LoginPageState extends State<LoginPage> {
                                                     WrapCrossAlignment.center,
                                                 runSpacing: 8,
                                                 children: [
-                                                  GestureDetector(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        _rememberMe =
-                                                            !_rememberMe;
-                                                      });
-                                                    },
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        SizedBox(
-                                                          width: 20,
-                                                          height: 20,
-                                                          child: Checkbox(
-                                                            key: const Key(
-                                                              'remember_me_checkbox',
-                                                            ),
-                                                            value: _rememberMe,
-                                                            onChanged: (val) {
-                                                              setState(() {
-                                                                _rememberMe =
-                                                                    val ??
-                                                                    false;
-                                                              });
-                                                            },
-                                                            activeColor:
-                                                                AppColors
-                                                                    .primaryBlue,
-                                                            shape: RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    4,
-                                                                  ),
-                                                            ),
-                                                            side:
-                                                                const BorderSide(
-                                                                  color: Color(
-                                                                    0xFFD1D5DB,
-                                                                  ),
-                                                                  width: 1.2,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 8,
-                                                        ),
-                                                        const Text(
-                                                          'Remember me',
-                                                          style: TextStyle(
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: AppColors
-                                                                .textMuted,
-                                                          ),
-                                                        ),
-                                                      ],
+                                                  const Text(
+                                                    'Stay signed in until you log out',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: AppColors.textMuted,
                                                     ),
                                                   ),
                                                   GestureDetector(

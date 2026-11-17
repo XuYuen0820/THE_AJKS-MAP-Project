@@ -1,17 +1,44 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import '../models/staff_user.dart';
+import '../services/auth_service.dart';
+import '../services/profile_service.dart';
 import '../widgets/dashboard_action_item.dart';
 import '../widgets/exam_card.dart';
 import '../widgets/exora_logo.dart';
-import 'login_page.dart';
+import 'profile_page.dart';
 
 /// Admin Dashboard Screen matching Figma node 1:1156.
-class AdminPage extends StatelessWidget {
+class AdminPage extends StatefulWidget {
   final StaffUser user;
 
   const AdminPage({super.key, required this.user});
+
+  @override
+  State<AdminPage> createState() => _AdminPageState();
+}
+
+class _AdminPageState extends State<AdminPage> {
+  late StaffUser _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = widget.user;
+    _refreshUserFromFirebase();
+  }
+
+  Future<void> _refreshUserFromFirebase() async {
+    try {
+      final latest = await ProfileService().fetchCurrentProfile();
+      if (mounted) {
+        setState(() => _user = latest);
+      }
+    } catch (_) {}
+  }
 
   void _handleAction(BuildContext context, String actionName) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -24,18 +51,67 @@ class AdminPage extends StatelessWidget {
     );
   }
 
-  void _handleLogout(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await AuthService().signOut();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to log out: $e')),
+      );
+    }
+  }
+
+  Future<void> _openProfile(BuildContext context) async {
+    final updatedUser = await Navigator.push<StaffUser>(
+      context,
+      MaterialPageRoute(builder: (context) => ProfilePage(user: _user)),
+    );
+
+    if (updatedUser != null && mounted) {
+      setState(() => _user = updatedUser);
+    } else {
+      _refreshUserFromFirebase();
+    }
+  }
+
+  Widget _buildDashboardAvatar() {
+    final avatarData = _user.avatarPath;
+
+    Widget child = const Icon(
+      Icons.person_rounded,
+      size: 36,
+      color: AppColors.primaryBlue,
+    );
+
+    if (avatarData != null && avatarData.isNotEmpty) {
+      try {
+        child = Image.memory(
+          base64Decode(avatarData),
+          width: 56,
+          height: 56,
+          fit: BoxFit.cover,
+        );
+      } catch (_) {}
+    }
+
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFFEFF4FF),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+      ),
+      child: ClipOval(child: child),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final greetingSuffix = user.staffId == 'admin123'
+    final greetingSuffix = _user.staffId == 'admin123'
         ? 'MR ALI.'
-        : '${user.name.split(' ').first}.';
+        : '${_user.name.split(' ').first}.';
 
     return Scaffold(
       key: const Key('admin_page'),
@@ -101,70 +177,58 @@ class AdminPage extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       // Profile Card Container
-                      Container(
-                        key: const Key('admin_profile_card'),
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x1A000000),
-                              blurRadius: 16,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFFEFF4FF),
-                                border: Border.all(
-                                  color: const Color(0xFFE2E8F0),
-                                  width: 1.5,
+                      InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => _openProfile(context),
+                        child: Container(
+                          key: const Key('admin_profile_card'),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x1A000000),
+                                blurRadius: 16,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              _buildDashboardAvatar(),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _user.name,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF111827),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _user.role.toUpperCase(),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF00007A),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.person_rounded,
-                                size: 36,
-                                color: AppColors.primaryBlue,
+                              const Icon(
+                                Icons.more_vert,
+                                color: Color(0xFF9CA3AF),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    user.name,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF111827),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    user.role.toUpperCase(),
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF00007A),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.more_vert,
-                              color: Color(0xFF9CA3AF),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 28),

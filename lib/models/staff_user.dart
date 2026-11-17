@@ -5,7 +5,6 @@ class StaffUser {
   final String email;
   final String role;
   final String faculty;
-  final String passwordHash;
   final bool isActive;
   final String? lastLoginAt;
   final String?
@@ -18,7 +17,6 @@ class StaffUser {
     required this.email,
     required this.role,
     required this.faculty,
-    required this.passwordHash,
     this.isActive = true,
     this.lastLoginAt,
     this.avatarPath,
@@ -33,7 +31,6 @@ class StaffUser {
       role: (map['role'] ?? 'Invigilator').toString().trim(),
       // Handles both 'Faculty' (capital F in Firestore) and 'faculty' and trims leading spaces
       faculty: (map['Faculty'] ?? map['faculty'] ?? '').toString().trim(),
-      passwordHash: (map['passwordHash'] ?? '').toString(),
       isActive: map['isActive'] ?? true,
       lastLoginAt: map['lastLoginAt']?.toString(),
       avatarPath: map['avatarBase64'] ?? map['avatarPath'],
@@ -47,7 +44,6 @@ class StaffUser {
       'email': email,
       'role': role,
       'Faculty': faculty,
-      'passwordHash': passwordHash,
       'isActive': isActive,
       'lastLoginAt': lastLoginAt,
       'avatarBase64': avatarPath,

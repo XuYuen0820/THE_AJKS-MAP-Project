@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import '../models/staff_user.dart';
+import '../services/auth_service.dart';
 import '../services/profile_service.dart';
 import '../widgets/dashboard_action_item.dart';
 import '../widgets/exam_card.dart';
 import '../widgets/exora_logo.dart';
-import 'login_page.dart';
 import 'profile_page.dart';
 
 /// Invigilator Dashboard Screen matching Figma node 1:1260.
@@ -33,7 +33,7 @@ class _InvigilatorPageState extends State<InvigilatorPage> {
 
   Future<void> _refreshUserFromFirebase() async {
     try {
-      final latest = await ProfileService().fetchProfile(_user.staffId);
+      final latest = await ProfileService().fetchCurrentProfile();
       if (mounted) {
         setState(() => _user = latest);
       }
@@ -51,11 +51,15 @@ class _InvigilatorPageState extends State<InvigilatorPage> {
     );
   }
 
-  void _handleLogout(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
-    );
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await AuthService().signOut();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to log out: $e')),
+      );
+    }
   }
 
   Future<void> _openProfile(BuildContext context) async {

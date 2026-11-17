@@ -1,8 +1,5 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:crypto/crypto.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import '../models/staff_user.dart';
@@ -11,15 +8,11 @@ import '../models/staff_user.dart';
 class AuthResult {
   final bool isSuccess;
   final String message;
-  final StaffUser? user;
 
-  AuthResult({required this.isSuccess, required this.message, this.user});
+  AuthResult({required this.isSuccess, required this.message});
 
-  factory AuthResult.success(
-    StaffUser user, {
-    String message = 'Login successful',
-  }) {
-    return AuthResult(isSuccess: true, message: message, user: user);
+  factory AuthResult.success({String message = 'Login successful'}) {
+    return AuthResult(isSuccess: true, message: message);
   }
 
   factory AuthResult.failure(String message) {
@@ -27,7 +20,7 @@ class AuthResult {
   }
 }
 
-/// Service handling staff authentication with Cloud Firestore.
+/// Handles Firebase Authentication sign-in and sign-out.
 class AuthService {
   static final AuthService _instance = AuthService._internal();
 
@@ -40,12 +33,6 @@ class AuthService {
   FirebaseFirestore get firestore {
     _firestore ??= FirebaseFirestore.instance;
     return _firestore!;
-  }
-
-  /// Hashes a password using SHA-256.
-  static String hashPassword(String password) {
-    final bytes = utf8.encode(password.trim());
-    return sha256.convert(bytes).toString();
   }
 
   /// Checks whether Firebase is configured.
@@ -64,16 +51,16 @@ class AuthService {
     }
   }
 
-  /// Authenticates staff using their Firestore account in the 'account' collection.
+  /// Asks Firebase Authentication to check the email and password.
   Future<AuthResult> login({
-    required String staffId,
+    required String email,
     required String password,
   }) async {
-    final cleanStaffId = staffId.trim().toLowerCase();
+    final cleanEmail = email.trim().toLowerCase();
     final cleanPassword = password.trim();
 
-    if (cleanStaffId.isEmpty || cleanPassword.isEmpty) {
-      return AuthResult.failure('Staff ID and Password cannot be empty.');
+    if (cleanEmail.isEmpty || cleanPassword.isEmpty) {
+      return AuthResult.failure('Email and Password cannot be empty.');
     }
 
     if (!isFirebaseConfigured) {
@@ -83,50 +70,61 @@ class AuthService {
     }
 
     try {
-      final querySnap = await firestore
-          .collection('account')
-          .where('staffId', isEqualTo: cleanStaffId)
-          .limit(1)
-          .get()
-          .timeout(const Duration(seconds: 10));
-
-      if (querySnap.docs.isEmpty) {
-        return AuthResult.failure(
-          'Staff account "$cleanStaffId" does not exist.',
-        );
-      }
-
-      final docSnap = querySnap.docs.first;
-      final docRef = docSnap.reference;
-      final data = docSnap.data();
-      final user = StaffUser.fromMap(data, docSnap.id);
-
-      if (!user.isActive) {
-        return AuthResult.failure('This staff account has been deactivated.');
-      }
-
-      final inputHash = hashPassword(cleanPassword);
-
-      // Supports existing plaintext passwords (e.g., "staff123") and SHA-256 hashes.
-      final passwordMatches =
-          user.passwordHash == inputHash || user.passwordHash == cleanPassword;
-
-      if (!passwordMatches) {
-        return AuthResult.failure('Incorrect password. Please try again.');
-      }
-
-      // Update the last login time in Firestore.
-      await docRef.update({'lastLoginAt': DateTime.now().toIso8601String()});
-
-      return AuthResult.success(user, message: 'Welcome back, ${user.name}!');
-    } on TimeoutException {
-      return AuthResult.failure(
-        'Network timeout: Could not reach Firebase server.',
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: cleanEmail,
+        password: cleanPassword,
       );
-    } on FirebaseException catch (e) {
-      return AuthResult.failure('Firebase error: ${e.message ?? e.code}');
+      return AuthResult.success();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-credential' ||
+          e.code == 'wrong-password' ||
+          e.code == 'user-not-found') {
+        return AuthResult.failure('Invalid email or password.');
+      }
+
+      if (e.code == 'user-disabled') {
+        return AuthResult.failure('This Firebase account has been disabled.');
+      }
+
+      if (e.code == 'too-many-requests') {
+        return AuthResult.failure('Too many attempts. Please try again later.');
+      }
+
+      if (e.code == 'network-request-failed') {
+        return AuthResult.failure('Check your internet connection and retry.');
+      }
+
+      return AuthResult.failure(
+        e.message ?? 'Firebase sign-in failed (${e.code}).',
+      );
     } catch (e) {
       return AuthResult.failure('Login error: $e');
     }
+  }
+
+  /// Loads a staff profile using the email from the signed-in Firebase account.
+  Future<StaffUser> fetchStaffProfile(String email) async {
+    final querySnap = await firestore
+        .collection('account')
+        .where('email', isEqualTo: email.trim().toLowerCase())
+        .limit(1)
+        .get()
+        .timeout(const Duration(seconds: 10));
+
+    if (querySnap.docs.isEmpty) {
+      throw Exception('No staff profile is linked to this email address.');
+    }
+
+    final doc = querySnap.docs.first;
+    await doc.reference.update({
+      'lastLoginAt': DateTime.now().toIso8601String(),
+    });
+
+    return StaffUser.fromMap(doc.data(), doc.id);
+  }
+
+  /// Signs out the current Firebase Authentication user.
+  Future<void> signOut() async {
+    await FirebaseAuth.instance.signOut();
   }
 }

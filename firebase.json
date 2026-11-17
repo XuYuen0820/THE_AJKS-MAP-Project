@@ -1,1 +1,25 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"exora-map-project","appId":"1:386553724163:android:0c808ed2db77c54cbf3d36","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"exora-map-project","configurations":{"android":"1:386553724163:android:0c808ed2db77c54cbf3d36","web":"1:386553724163:web:99afb997a9ebeb74bf3d36"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "exora-map-project",
+          "appId": "1:386553724163:android:0c808ed2db77c54cbf3d36",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "exora-map-project",
+          "configurations": {
+            "android": "1:386553724163:android:0c808ed2db77c54cbf3d36",
+            "web": "1:386553724163:web:99afb997a9ebeb74bf3d36"
+          }
+        }
+      }
+    }
+  }
+}

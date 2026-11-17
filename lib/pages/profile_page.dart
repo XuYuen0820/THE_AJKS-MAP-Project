@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import '../models/staff_user.dart';
+import '../services/auth_service.dart';
 import '../services/profile_service.dart';
 import 'edit_profile_page.dart';
-import 'login_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final StaffUser user;
@@ -31,7 +31,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _fetchRealFirebaseProfile() async {
     try {
-      final freshUser = await ProfileService().fetchProfile(_user.staffId);
+      final freshUser = await ProfileService().fetchCurrentProfile();
       if (mounted) {
         setState(() {
           _user = freshUser;
@@ -73,11 +73,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _logout() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
-    );
+  Future<void> _logout() async {
+    try {
+      await AuthService().signOut();
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to log out: $e')),
+      );
+    }
   }
 
   Widget _buildProfileItem(String label, String value) {

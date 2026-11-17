@@ -1,17 +1,44 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import '../models/staff_user.dart';
+import '../services/profile_service.dart';
 import '../widgets/dashboard_action_item.dart';
 import '../widgets/exam_card.dart';
 import '../widgets/exora_logo.dart';
 import 'login_page.dart';
+import 'profile_page.dart';
 
 /// Invigilator Dashboard Screen matching Figma node 1:1260.
-class InvigilatorPage extends StatelessWidget {
+class InvigilatorPage extends StatefulWidget {
   final StaffUser user;
 
   const InvigilatorPage({super.key, required this.user});
+
+  @override
+  State<InvigilatorPage> createState() => _InvigilatorPageState();
+}
+
+class _InvigilatorPageState extends State<InvigilatorPage> {
+  late StaffUser _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = widget.user;
+    _refreshUserFromFirebase();
+  }
+
+  Future<void> _refreshUserFromFirebase() async {
+    try {
+      final latest = await ProfileService().fetchProfile(_user.staffId);
+      if (mounted) {
+        setState(() => _user = latest);
+      }
+    } catch (_) {}
+  }
 
   void _handleAction(BuildContext context, String actionName) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -31,17 +58,61 @@ class InvigilatorPage extends StatelessWidget {
     );
   }
 
+  Future<void> _openProfile(BuildContext context) async {
+    final updatedUser = await Navigator.push<StaffUser>(
+      context,
+      MaterialPageRoute(builder: (context) => ProfilePage(user: _user)),
+    );
+
+    if (updatedUser != null && mounted) {
+      setState(() => _user = updatedUser);
+    } else {
+      _refreshUserFromFirebase();
+    }
+  }
+
+  Widget _buildDashboardAvatar() {
+    final avatarData = _user.avatarPath;
+
+    Widget child = const Icon(
+      Icons.person_rounded,
+      size: 36,
+      color: AppColors.primaryBlue,
+    );
+
+    if (avatarData != null && avatarData.isNotEmpty) {
+      try {
+        child = Image.memory(
+          base64Decode(avatarData),
+          width: 56,
+          height: 56,
+          fit: BoxFit.cover,
+        );
+      } catch (_) {}
+    }
+
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFFEFF4FF),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+      ),
+      child: ClipOval(child: child),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final greetingSuffix = user.staffId == 'staff123'
+    final greetingSuffix = _user.staffId == 'staff123'
         ? 'DR TAN.'
-        : '${user.name.split(' ').first}.';
+        : '${_user.name.split(' ').first}.';
 
     return Scaffold(
       key: const Key('invigilator_page'),
       body: Stack(
         children: [
-          // Background Gradient matching Figma specs
           Container(
             width: double.infinity,
             height: double.infinity,
@@ -69,15 +140,14 @@ class InvigilatorPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top Brand Header
                       const ExoraLogo(
                         mainAxisAlignment: MainAxisAlignment.start,
                         iconSize: 24,
                         textHeight: 16,
                       ),
+
                       const SizedBox(height: 28),
 
-                      // Welcome Title
                       Text.rich(
                         TextSpan(
                           text: 'WELCOME, ',
@@ -98,78 +168,71 @@ class InvigilatorPage extends StatelessWidget {
                           ],
                         ),
                       ),
+
                       const SizedBox(height: 20),
 
-                      // Profile Card Container
-                      Container(
-                        key: const Key('invigilator_profile_card'),
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x1A000000),
-                              blurRadius: 16,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFFEFF4FF),
-                                border: Border.all(
-                                  color: const Color(0xFFE2E8F0),
-                                  width: 1.5,
+                      InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => _openProfile(context),
+                        child: Container(
+                          key: const Key('invigilator_profile_card'),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x1A000000),
+                                blurRadius: 16,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              _buildDashboardAvatar(),
+
+                              const SizedBox(width: 16),
+
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _user.name,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF111827),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 4),
+
+                                    Text(
+                                      _user.role.toUpperCase(),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF00007A),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.person_rounded,
-                                size: 36,
-                                color: AppColors.primaryBlue,
+
+                              const Icon(
+                                Icons.more_vert,
+                                color: Color(0xFF9CA3AF),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    user.name,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF111827),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    user.role.toUpperCase(),
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF00007A),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.more_vert,
-                              color: Color(0xFF9CA3AF),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
+
                       const SizedBox(height: 28),
 
-                      // Dashboard Header
                       const Text(
                         'Dashboard',
                         style: TextStyle(
@@ -178,9 +241,9 @@ class InvigilatorPage extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
+
                       const SizedBox(height: 16),
 
-                      // Dashboard 3-Action Grid
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,6 +262,7 @@ class InvigilatorPage extends StatelessWidget {
                               onTap: () => _handleAction(context, 'QR Scanner'),
                             ),
                           ),
+
                           Expanded(
                             child: DashboardActionItem(
                               itemKey: const Key(
@@ -214,6 +278,7 @@ class InvigilatorPage extends StatelessWidget {
                                   _handleAction(context, 'Attendance Analysis'),
                             ),
                           ),
+
                           Expanded(
                             child: DashboardActionItem(
                               itemKey: const Key(
@@ -231,9 +296,9 @@ class InvigilatorPage extends StatelessWidget {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 28),
 
-                      // Upcoming Exam Header
                       const Text(
                         'Upcoming Exam',
                         style: TextStyle(
@@ -242,27 +307,29 @@ class InvigilatorPage extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
+
                       const SizedBox(height: 14),
 
-                      // Examination Course Cards
                       ExamCard(
                         courseCode: 'SECJ3553',
                         courseTitle: 'ARTIFICIAL INTELLIGENCE',
                         onTap: () => _handleAction(context, 'SECJ3553'),
                       ),
+
                       ExamCard(
                         courseCode: 'SECJ3623',
                         courseTitle: 'MOBILE APPLICATION DEVELOPMENT',
                         onTap: () => _handleAction(context, 'SECJ3623'),
                       ),
+
                       ExamCard(
                         courseCode: 'SECV3104',
                         courseTitle: 'APPLICATION DEVELOPMENT',
                         onTap: () => _handleAction(context, 'SECV3104'),
                       ),
+
                       const SizedBox(height: 24),
 
-                      // Logout Link
                       Center(
                         child: TextButton(
                           key: const Key('logout_button'),
@@ -277,6 +344,7 @@ class InvigilatorPage extends StatelessWidget {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
                     ],
                   ),

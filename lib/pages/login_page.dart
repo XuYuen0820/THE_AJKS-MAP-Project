@@ -10,8 +10,8 @@ import '../widgets/exora_logo.dart';
 import '../widgets/success_card.dart';
 import 'admin_page.dart';
 import 'invigilator_page.dart';
+import 'forgot_password_page.dart';
 
-/// Exora Staff Login Screen matching Figma specification.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -91,14 +91,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleForgotPassword() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Forgot Password clicked'),
-        backgroundColor: AppColors.primaryBlue,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        duration: const Duration(seconds: 2),
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
     );
   }
 

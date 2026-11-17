@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "386553724163",
+    "project_id": "exora-map-project",
+    "storage_bucket": "exora-map-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386553724163:android:0c808ed2db77c54cbf3d36",
+        "android_client_info": {
+          "package_name": "com.example.map.map_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpDbdAH6M4vpRdsFTxG3YieyjmTw7rMso"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -7,6 +7,8 @@ import '../widgets/exam_card.dart';
 import '../widgets/exora_logo.dart';
 import 'login_page.dart';
 
+import 'invigilator_management_page.dart';
+
 /// Admin Dashboard Screen matching Figma node 1:1156.
 class AdminPage extends StatelessWidget {
   final StaffUser user;
@@ -238,10 +240,14 @@ class AdminPage extends StatelessWidget {
                                 size: 28,
                               ),
                               label: 'Invigilator\nManagement',
-                              onTap: () => _handleAction(
+                              onTap: () {
+                                Navigator.push(
                                 context,
-                                'Invigilator Management',
-                              ),
+                                MaterialPageRoute(
+                                  builder: (_) => const InvigilatorManagementPage(),
+                                ),
+                              );
+                            },
                             ),
                           ),
                         ],

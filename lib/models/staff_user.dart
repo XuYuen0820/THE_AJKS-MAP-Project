@@ -20,7 +20,11 @@ class StaffUser {
 
   factory StaffUser.fromMap(Map<String, dynamic> map, String docId) {
     return StaffUser(
-      staffId: map['staffId'] as String? ?? docId,
+      staffId:
+          map['staffId'] as String? ??
+          map['admin123'] as String? ??
+          map['staff123'] as String? ??
+          docId,
       name: map['name'] as String? ?? 'Staff Member',
       role: map['role'] as String? ?? 'Staff',
       passwordHash: map['passwordHash'] as String? ?? '',
@@ -41,7 +45,8 @@ class StaffUser {
       'role': role,
       'passwordHash': passwordHash,
       'isActive': isActive,
-      'createdAt': createdAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'createdAt':
+          createdAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
       'lastLoginAt': lastLoginAt?.toIso8601String(),
     };
   }

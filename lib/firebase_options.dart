@@ -18,19 +18,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDemoPlaceholderKeyForExoraAppWeb',
-    appId: '1:1234567890:web:demo123456',
-    messagingSenderId: '1234567890',
-    projectId: 'demo-exora-map',
-    authDomain: 'demo-exora-map.firebaseapp.com',
-    storageBucket: 'demo-exora-map.appspot.com',
+    apiKey: 'AIzaSyDeXVG81Ld9idu9rOIymLvPvR-RElwQihQ',
+    appId: '1:386553724163:web:99afb997a9ebeb74bf3d36',
+    messagingSenderId: '386553724163',
+    projectId: 'exora-map-project',
+    authDomain: 'exora-map-project.firebaseapp.com',
+    storageBucket: 'exora-map-project.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDemoPlaceholderKeyForExoraAppAndroid',
-    appId: '1:1234567890:android:demo123456',
-    messagingSenderId: '1234567890',
-    projectId: 'demo-exora-map',
-    storageBucket: 'demo-exora-map.appspot.com',
+    apiKey: 'AIzaSyDeXVG81Ld9idu9rOIymLvPvR-RElwQihQ',
+    appId: '1:386553724163:web:99afb997a9ebeb74bf3d36',
+    messagingSenderId: '386553724163',
+    projectId: 'exora-map-project',
+    authDomain: 'exora-map-project.firebaseapp.com',
+    storageBucket: 'exora-map-project.firebasestorage.app',
   );
 }

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_core/firebase_core.dart';
+
 import '../models/staff_user.dart';
 
 /// Result wrapper for authentication attempts.
@@ -11,13 +13,12 @@ class AuthResult {
   final String message;
   final StaffUser? user;
 
-  AuthResult({
-    required this.isSuccess,
-    required this.message,
-    this.user,
-  });
+  AuthResult({required this.isSuccess, required this.message, this.user});
 
-  factory AuthResult.success(StaffUser user, {String message = 'Login successful'}) {
+  factory AuthResult.success(
+    StaffUser user, {
+    String message = 'Login successful',
+  }) {
     return AuthResult(isSuccess: true, message: message, user: user);
   }
 
@@ -74,7 +75,66 @@ class AuthService {
       return AuthResult.failure('Staff ID and Password cannot be empty.');
     }
 
-    // 1. Hardcoded evaluation accounts for testing
+    // 1. If Firebase is connected, strictly match against Cloud Firestore
+    if (isFirebaseConfigured) {
+      try {
+        DocumentSnapshot<Map<String, dynamic>>? docSnap;
+
+        // Try direct document lookup in 'account' or 'staff'
+        final accountDoc = await firestore
+            .collection('account')
+            .doc(cleanStaffId)
+            .get()
+            .timeout(const Duration(seconds: 4));
+        if (accountDoc.exists && accountDoc.data() != null) {
+          docSnap = accountDoc;
+        } else {
+          final staffDoc = await firestore
+              .collection('staff')
+              .doc(cleanStaffId)
+              .get()
+              .timeout(const Duration(seconds: 4));
+          if (staffDoc.exists && staffDoc.data() != null) {
+            docSnap = staffDoc;
+          }
+        }
+
+        // If not found by direct doc ID, scan 'account' documents for matching field or alias
+        if (docSnap == null) {
+          final querySnap = await firestore
+              .collection('account')
+              .get()
+              .timeout(const Duration(seconds: 4));
+          for (final doc in querySnap.docs) {
+            final data = doc.data();
+            if (doc.id == cleanStaffId ||
+                data['staffId'] == cleanStaffId ||
+                data[cleanStaffId] == cleanStaffId ||
+                (cleanStaffId == 'admin123' && doc.id == 'admin') ||
+                (cleanStaffId == 'staff123' && doc.id == 'staff')) {
+              docSnap = doc;
+              break;
+            }
+          }
+        }
+
+        if (docSnap == null || !docSnap.exists || docSnap.data() == null) {
+          return AuthResult.failure(
+            'Staff account "$cleanStaffId" does not exist.',
+          );
+        }
+
+        return _verifyPasswordAndReturn(docSnap, cleanPassword);
+      } on TimeoutException {
+        return AuthResult.failure(
+          'Network timeout: Could not reach Firebase server.',
+        );
+      } catch (e) {
+        return AuthResult.failure('Database error: ${e.toString()}');
+      }
+    }
+
+    // 2. Offline / Mock fallback when Firebase is not configured (e.g. headless unit tests)
     if (cleanStaffId == 'admin123' && cleanPassword == 'admin123') {
       await Future.delayed(const Duration(milliseconds: 500));
       return AuthResult.success(
@@ -101,41 +161,7 @@ class AuthService {
       );
     }
 
-    // 2. Offline / Demo mode fallback when Firebase project credentials are pending
-    if (!isFirebaseConfigured) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      return AuthResult.failure(
-        'Invalid credentials. (Test accounts: admin123/admin123 or staff123/staff123)',
-      );
-    }
-
-    // 3. Cloud Firestore real-time authentication
-    try {
-      final docRef = firestore.collection('staff').doc(cleanStaffId);
-      final docSnap = await docRef
-          .get()
-          .timeout(const Duration(seconds: 4));
-
-      if (!docSnap.exists || docSnap.data() == null) {
-        // Auto-seed default accounts if collection is freshly initialized
-        if (cleanStaffId == 'admin123' || cleanStaffId == 'staff123') {
-          await seedDefaultAdminAccount();
-          final seededSnap = await docRef
-              .get()
-              .timeout(const Duration(seconds: 4));
-          if (seededSnap.exists && seededSnap.data() != null) {
-            return _verifyPasswordAndReturn(seededSnap, cleanPassword);
-          }
-        }
-        return AuthResult.failure('Staff account "$cleanStaffId" does not exist.');
-      }
-
-      return _verifyPasswordAndReturn(docSnap, cleanPassword);
-    } on TimeoutException {
-      return AuthResult.failure('Network timeout: Could not reach Firebase server.');
-    } catch (e) {
-      return AuthResult.failure('Database error: ${e.toString()}');
-    }
+    return AuthResult.failure('Invalid credentials.');
   }
 
   AuthResult _verifyPasswordAndReturn(
@@ -158,48 +184,10 @@ class AuthService {
     }
 
     // Update lastLoginAt timestamp asynchronously
-    docSnap.reference.update({
-      'lastLoginAt': DateTime.now().toIso8601String(),
-    }).catchError((_) {});
+    docSnap.reference
+        .update({'lastLoginAt': DateTime.now().toIso8601String()})
+        .catchError((_) {});
 
     return AuthResult.success(user, message: 'Welcome back, ${user.name}!');
-  }
-
-  /// Auto-seeds test accounts into Firestore.
-  Future<void> seedDefaultAdminAccount() async {
-    if (!isFirebaseConfigured) return;
-    try {
-      final adminRef = firestore.collection('staff').doc('admin123');
-      final adminExists = (await adminRef
-              .get()
-              .timeout(const Duration(seconds: 4)))
-          .exists;
-      if (!adminExists) {
-        final defaultAdmin = StaffUser(
-          staffId: 'admin123',
-          name: 'MR ALI BIN BAKAR',
-          role: 'Admin',
-          passwordHash: hashPassword('admin123'),
-          createdAt: DateTime.now(),
-        );
-        await adminRef.set(defaultAdmin.toMap());
-      }
-
-      final staffRef = firestore.collection('staff').doc('staff123');
-      final staffExists = (await staffRef
-              .get()
-              .timeout(const Duration(seconds: 4)))
-          .exists;
-      if (!staffExists) {
-        final defaultStaff = StaffUser(
-          staffId: 'staff123',
-          name: 'DR TAN BEE LAN',
-          role: 'Invigilator',
-          passwordHash: hashPassword('staff123'),
-          createdAt: DateTime.now(),
-        );
-        await staffRef.set(defaultStaff.toMap());
-      }
-    } catch (_) {}
   }
 }

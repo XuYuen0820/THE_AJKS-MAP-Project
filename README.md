@@ -1,15 +1,30 @@
 # Exora
+EXORA is a role-based Flutter and Firebase mobile application for university examination supervision, invigilator duty assignments, and staff profile management.
+
+## Architecture (MVVM)
+The application is structured using the **Model–View–ViewModel (MVVM)** pattern with a dedicated **Service** layer so UI widgets do not interact directly with Firebase:
+
+lib/
+├── constants/                  # App color palette and theme constants
+├── features/                   # Feature-based Views and ViewModels
+│   ├── auth/                   # Login, Forgot Password, and AuthGate role routing
+│   ├── dashboard/              # Role-based Admin and Invigilator dashboards
+│   ├── invigilator_management/ # Invigilator list, assignment, and discharge flows
+│   └── profile/                # Profile viewing, avatar upload, and password update
+├── models/                     # Plain Dart data models (StaffUser, ExamAssignment)
+├── services/                   # FirebaseAuth and Cloud Firestore data access layer
+└── widgets/                    # Reusable UI components
 
 ## Installation & Setup
 
 ### 1. Clone and Install Dependencies
 
-```bash
 # Clone the repository
-git clone https://github.com/XuYuen0820/THE_AJKS-MAP-Project.git
+git clone [https://github.com/XuYuen0820/THE_AJKS-MAP-Project.git](https://github.com/XuYuen0820/THE_AJKS-MAP-Project.git)
 
 # Navigate into the project folder
 cd THE_AJKS-MAP-Project
+
 # Then
 flutter pub get
 ```
@@ -19,33 +34,33 @@ flutter pub get
 ### 2. Run the Application
 
 ```bash
+# Run on Web (Chrome):
 flutter run -d chrome --web-port=8080
 ```
 > Press `F12` in Chrome and switch to the **Device Toolbar** (`Ctrl + Shift + M`) to preview the mobile layout.
 
-### 3. Configure Firebase Authentication
+# Build Android Release APK:
+flutter build apk --release
 
-The login form uses **email and password**. Firebase Authentication checks the
-password, and Firestore provides the staff profile and role.
+The compiled release APK is output to build/app/outputs/flutter-apk/app-release.apk.
 
-1. In the Firebase Console, open **Authentication → Sign-in method** and enable
-   **Email/Password**.
-2. In **Authentication → Users**, create an account for each staff member using
-   their email address. Set their password there.
-3. In the Firestore `account` collection, make sure each staff document has an
-   `email` field that exactly matches the Firebase Authentication email.
-4. Publish the Firestore rules from [`firestore.rules`](./firestore.rules).
-   Using the Firebase CLI from the repository root:
+### 3. Configure Firebase Authentication & Cloud Firestore
+
+The login form uses email and password. Firebase Authentication verifies user credentials, while Cloud Firestore provides the staff profile and role (Admin or Invigilator).
+
+1. In the Firebase Console, open Authentication → Sign-in method and enable Email/Password.
+2. In Authentication → Users, create an account for each staff member using their email address and password.
+3. In the Firestore account collection, ensure each staff document contains an email field that exactly matches their Firebase Authentication email, along with a role field (Admin or Invigilator).
+4. Deploy the Firestore security rules from firestore.rules using the Firebase CLI from the repository root:
 
    ```bash
-   firebase deploy --only firestore:rules
+   firebase deploy --only firestore:rules --project exora-map-project
    ```
 
-Firebase Authentication remembers a signed-in user when the app is reopened.
-The user stays signed in until they choose **Log out**. Log out signs them out
-of Firebase Authentication.
+Firebase Authentication persists the signed-in session across app restarts until the user selects Log out.
 
-The Firestore `passwordHash` field is no longer used for login. Remove old
-password values from staff documents after creating the corresponding Firebase
-Authentication accounts. A Firestore staff document by itself does not create
-a Firebase Authentication account.
+Note: Legacy passwordHash fields in Firestore are no longer used for authentication and should be removed from staff documents. A Firestore document alone does not grant login access without a matching Firebase Authentication user.
+
+### 4. Test Accounts
+# Admin--> Email: laini@graduate.utm.my  Password: admin001
+# Invigilator--> Email: koryee.heng@graduate.utm.my   Password: staff001

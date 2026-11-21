@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../constants/app_colors.dart';
 import '../../models/staff_user.dart';
 import '../../widgets/exora_logo.dart';
+import 'invigilator_management_viewmodel.dart';
 
-class InvigilatorListPage extends StatelessWidget {
-  const InvigilatorListPage({super.key});
+class InvigilatorListView extends StatelessWidget {
+  InvigilatorListView({super.key});
+
+  final _viewModel = InvigilatorManagementViewModel();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Gradient
           Container(
             width: double.infinity,
             height: double.infinity,
@@ -29,7 +31,6 @@ class InvigilatorListPage extends StatelessWidget {
               ),
             ),
           ),
-
           SafeArea(
             child: Center(
               child: ConstrainedBox(
@@ -37,13 +38,18 @@ class InvigilatorListPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top Bar
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       child: Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                            ),
                             onPressed: () => Navigator.pop(context),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
@@ -57,10 +63,11 @@ class InvigilatorListPage extends StatelessWidget {
                         ],
                       ),
                     ),
-
-                    // Page Title
                     const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 8,
+                      ),
                       child: Text(
                         'Invigilator List',
                         style: TextStyle(
@@ -72,45 +79,48 @@ class InvigilatorListPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // List Content
                     Expanded(
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('account')
-                            .doc('staff')
-                            .collection('users')
-                            .where('role', whereIn: ['Invigilator', 'invigilator'])
-                            .snapshots(),
+                      child: StreamBuilder<List<StaffUser>>(
+                        stream: _viewModel.invigilatorsStream,
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator(color: Colors.white));
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
+                            );
                           }
                           if (snapshot.hasError) {
                             return Center(
                               child: Padding(
                                 padding: const EdgeInsets.all(24),
-                                child: Text('Error: ${snapshot.error}',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(color: Colors.white)),
+                                child: Text(
+                                  'Error: ${snapshot.error}',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                               ),
                             );
                           }
-                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
                             return const Center(
-                                child: Text('No invigilators found.',
-                                    style: TextStyle(color: Colors.white70)));
+                              child: Text(
+                                'No invigilators found.',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                            );
                           }
 
-                          final invigilators = snapshot.data!.docs
-                              .map((doc) => StaffUser.fromMap(
-                                  doc.data() as Map<String, dynamic>, doc.id))
-                              .toList();
-
+                          final invigilators = snapshot.data!;
                           return ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 8,
+                            ),
                             itemCount: invigilators.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final user = invigilators[index];
                               return Container(
@@ -122,8 +132,12 @@ class InvigilatorListPage extends StatelessWidget {
                                   leading: CircleAvatar(
                                     backgroundColor: AppColors.primaryBlue,
                                     child: Text(
-                                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                                      style: const TextStyle(color: Colors.white),
+                                      user.name.isNotEmpty
+                                          ? user.name[0].toUpperCase()
+                                          : '?',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                   title: Text(
@@ -134,21 +148,33 @@ class InvigilatorListPage extends StatelessWidget {
                                     ),
                                   ),
                                   subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(user.email,
-                                          style: const TextStyle(color: AppColors.textMuted)),
-                                      Text('Staff ID: ${user.staffId} • ${user.faculty}',
-                                          style: const TextStyle(
-                                              color: AppColors.textMuted, fontSize: 11)),
+                                      Text(
+                                        user.email,
+                                        style: const TextStyle(
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Staff ID: ${user.staffId} • ${user.faculty}',
+                                        style: const TextStyle(
+                                          color: AppColors.textMuted,
+                                          fontSize: 11,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   trailing: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: user.isActive
-                                          ? Colors.green.withOpacity(0.15)
-                                          : Colors.red.withOpacity(0.15),
+                                          ? Colors.green.withValues(alpha: 0.15)
+                                          : Colors.red.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(

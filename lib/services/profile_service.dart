@@ -9,7 +9,6 @@ import '../models/staff_user.dart';
 class ProfileService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Fetches the signed-in user's profile from Firestore.
   Future<StaffUser> fetchCurrentProfile() async {
     final firebaseUser = FirebaseAuth.instance.currentUser;
     final email = firebaseUser?.email;
@@ -32,7 +31,6 @@ class ProfileService {
     return StaffUser.fromMap(doc.data(), doc.id);
   }
 
-  /// Updates the Firebase password and/or the avatar stored in Firestore.
   Future<StaffUser> updateProfile({
     required StaffUser currentUser,
     required String newPassword,

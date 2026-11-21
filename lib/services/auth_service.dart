@@ -1,47 +1,43 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../models/staff_user.dart';
 
-/// Result wrapper for authentication attempts.
 class AuthResult {
   final bool isSuccess;
   final String message;
 
   AuthResult({required this.isSuccess, required this.message});
 
-  factory AuthResult.success({String message = 'Login successful'}) {
-    return AuthResult(isSuccess: true, message: message);
-  }
+  factory AuthResult.success({String message = 'Login successful'}) =>
+      AuthResult(isSuccess: true, message: message);
 
-  factory AuthResult.failure(String message) {
-    return AuthResult(isSuccess: false, message: message);
-  }
+  factory AuthResult.failure(String message) =>
+      AuthResult(isSuccess: false, message: message);
 }
 
-/// Handles Firebase Authentication sign-in and sign-out.
 class AuthService {
   static final AuthService _instance = AuthService._internal();
-
   factory AuthService() => _instance;
-
   AuthService._internal();
 
-  FirebaseFirestore? _firestore;
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+  FirebaseAuth get _auth => FirebaseAuth.instance;
 
-  FirebaseFirestore get firestore {
-    _firestore ??= FirebaseFirestore.instance;
-    return _firestore!;
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  Future<void> configureWebPersistence() async {
+    if (kIsWeb) {
+      await _auth.setPersistence(Persistence.LOCAL);
+    }
   }
 
-  /// Checks whether Firebase is configured.
   bool get isFirebaseConfigured {
     if (Firebase.apps.isEmpty) return false;
-
     try {
       final projectId = Firebase.app().options.projectId;
-
       return projectId.isNotEmpty &&
           projectId != 'demo-exora-map' &&
           !projectId.contains('placeholder') &&
@@ -51,7 +47,6 @@ class AuthService {
     }
   }
 
-  /// Asks Firebase Authentication to check the email and password.
   Future<AuthResult> login({
     required String email,
     required String password,
@@ -70,7 +65,7 @@ class AuthService {
     }
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await _auth.signInWithEmailAndPassword(
         email: cleanEmail,
         password: cleanPassword,
       );
@@ -81,19 +76,15 @@ class AuthService {
           e.code == 'user-not-found') {
         return AuthResult.failure('Invalid email or password.');
       }
-
       if (e.code == 'user-disabled') {
         return AuthResult.failure('This Firebase account has been disabled.');
       }
-
       if (e.code == 'too-many-requests') {
         return AuthResult.failure('Too many attempts. Please try again later.');
       }
-
       if (e.code == 'network-request-failed') {
         return AuthResult.failure('Check your internet connection and retry.');
       }
-
       return AuthResult.failure(
         e.message ?? 'Firebase sign-in failed (${e.code}).',
       );
@@ -102,9 +93,29 @@ class AuthService {
     }
   }
 
-  /// Loads a staff profile using the email from the signed-in Firebase account.
+  Future<AuthResult> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      return AuthResult.success(
+        message: 'If this email has an account, Firebase sent a password reset link.',
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-email') {
+        return AuthResult.failure('Please enter a valid email address.');
+      }
+      if (e.code == 'network-request-failed') {
+        return AuthResult.failure(
+          'Check your internet connection and try again.',
+        );
+      }
+      return AuthResult.failure(
+        'Could not send the reset email. Please try again.',
+      );
+    }
+  }
+
   Future<StaffUser> fetchStaffProfile(String email) async {
-    final querySnap = await firestore
+    final querySnap = await _firestore
         .collection('account')
         .where('email', isEqualTo: email.trim().toLowerCase())
         .limit(1)
@@ -123,8 +134,7 @@ class AuthService {
     return StaffUser.fromMap(doc.data(), doc.id);
   }
 
-  /// Signs out the current Firebase Authentication user.
   Future<void> signOut() async {
-    await FirebaseAuth.instance.signOut();
+    await _auth.signOut();
   }
 }

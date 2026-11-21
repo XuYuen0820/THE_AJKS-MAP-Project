@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
-import '../../widgets/exora_logo.dart'; // Using your existing ExoraLogo widget
-import 'invigilator_list_page.dart';
-import 'assign_invigilator_page.dart';
-import 'discharge_invigilator_page.dart';
 
-class InvigilatorManagementPage extends StatelessWidget {
-  const InvigilatorManagementPage({super.key});
+import '../../constants/app_colors.dart';
+import '../../widgets/exora_logo.dart';
+import 'assign_invigilator_view.dart';
+import 'discharge_invigilator_view.dart';
+import 'invigilator_list_view.dart';
+
+class InvigilatorManagementView extends StatelessWidget {
+  const InvigilatorManagementView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Background Gradient matching AdminPage exactly
           Container(
             width: double.infinity,
             height: double.infinity,
@@ -30,24 +30,23 @@ class InvigilatorManagementPage extends StatelessWidget {
               ),
             ),
           ),
-
           SafeArea(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Center(
-                // 2. ConstrainedBox makes it look like a mobile screen on Web/Desktop
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      
-                      // Top Brand Header (with back button for navigation)
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                            ),
                             onPressed: () => Navigator.pop(context),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
@@ -61,8 +60,6 @@ class InvigilatorManagementPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 28),
-
-                      // Page Title
                       const Text(
                         'Invigilator\nManagement',
                         style: TextStyle(
@@ -74,8 +71,6 @@ class InvigilatorManagementPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 28),
-
-                      // 3-Action Grid (Fixed layout matching Dashboard)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +81,9 @@ class InvigilatorManagementPage extends StatelessWidget {
                               label: 'Invigilator\nList',
                               onTap: () => Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const InvigilatorListPage()),
+                                MaterialPageRoute(
+                                  builder: (_) => InvigilatorListView(),
+                                ),
                               ),
                             ),
                           ),
@@ -96,7 +93,9 @@ class InvigilatorManagementPage extends StatelessWidget {
                               label: 'Assign\nInvigilator',
                               onTap: () => Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const AssignInvigilatorPage()),
+                                MaterialPageRoute(
+                                  builder: (_) => const AssignInvigilatorView(),
+                                ),
                               ),
                             ),
                           ),
@@ -106,7 +105,9 @@ class InvigilatorManagementPage extends StatelessWidget {
                               label: 'Discharge\nInvigilator',
                               onTap: () => Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const DischargeInvigilatorPage()),
+                                MaterialPageRoute(
+                                  builder: (_) => DischargeInvigilatorView(),
+                                ),
                               ),
                             ),
                           ),
@@ -124,7 +125,6 @@ class InvigilatorManagementPage extends StatelessWidget {
   }
 }
 
-// 3. The custom card widget styled exactly like DashboardActionItem
 class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -158,11 +158,7 @@ class _ActionCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                icon,
-                size: 32,
-                color: AppColors.primaryBlue,
-              ),
+              child: Icon(icon, size: 32, color: AppColors.primaryBlue),
             ),
             const SizedBox(height: 12),
             Text(

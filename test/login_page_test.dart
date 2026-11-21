@@ -1,26 +1,14 @@
-
-
-
-
-
-
-
-
-
-
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:map_app/pages/forgot_password_page.dart';
-import 'package:map_app/pages/login_page.dart';
+import 'package:map_app/features/auth/forgot_password_view.dart';
+import 'package:map_app/features/auth/login_view.dart';
 
 void main() {
   Widget createTestWidget() {
-    return const MaterialApp(home: LoginPage());
+    return const MaterialApp(home: LoginView());
   }
 
-  group('LoginPage widget tests', () {
+  group('LoginView widget tests', () {
     testWidgets('shows email, password, and login controls', (tester) async {
       await tester.pumpWidget(createTestWidget());
 
@@ -82,7 +70,7 @@ void main() {
       await tester.tap(find.byKey(const Key('forgot_password_button')));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+      expect(find.byType(ForgotPasswordView), findsOneWidget);
       expect(find.byKey(const Key('reset_email_field')), findsOneWidget);
       expect(find.byKey(const Key('send_reset_email_button')), findsOneWidget);
     });

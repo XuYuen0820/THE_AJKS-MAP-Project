@@ -3,13 +3,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /account/{accountId} {
-      allow read: if request.auth != null
-        && request.auth.token.email == resource.data.email;
+      
+      allow read: if request.auth != null;
 
+      
       allow update: if request.auth != null
         && request.auth.token.email == resource.data.email
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['lastLoginAt', 'avatarBase64']);
+    }
+
+    match /assignments/{assignmentId} {
+      
+      allow read, create, delete: if request.auth != null;
     }
   }
 }

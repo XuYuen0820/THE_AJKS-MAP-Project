@@ -1,26 +1,20 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'constants/app_colors.dart';
+import 'features/auth/login_view.dart';
+import 'features/dashboard/admin_dashboard_view.dart';
+import 'features/dashboard/invigilator_dashboard_view.dart';
 import 'firebase_options.dart';
 import 'models/staff_user.dart';
-import 'pages/admin_page.dart';
-import 'pages/invigilator_page.dart';
-import 'pages/login_page.dart';
 import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  if (kIsWeb) {
-    await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
-  }
+  await AuthService().configureWebPersistence();
 
   runApp(const ExoraApp());
 }
@@ -34,9 +28,7 @@ class ExoraApp extends StatelessWidget {
       title: 'Exora',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primaryBlue,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryBlue),
         scaffoldBackgroundColor: AppColors.backgroundTop,
         useMaterial3: true,
       ),
@@ -50,8 +42,10 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+    final authService = AuthService();
+
+    return StreamBuilder(
+      stream: authService.authStateChanges,
       builder: (context, authSnapshot) {
         if (authSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -60,17 +54,13 @@ class AuthGate extends StatelessWidget {
         }
 
         final firebaseUser = authSnapshot.data;
-        if (firebaseUser == null) {
-          return const LoginPage();
-        }
-
-        final email = firebaseUser.email;
-        if (email == null || email.isEmpty) {
-          return const LoginPage();
+        final email = firebaseUser?.email;
+        if (firebaseUser == null || email == null || email.isEmpty) {
+          return const LoginView();
         }
 
         return FutureBuilder<StaffUser>(
-          future: AuthService().fetchStaffProfile(email),
+          future: authService.fetchStaffProfile(email),
           builder: (context, profileSnapshot) {
             if (profileSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
@@ -87,15 +77,12 @@ class AuthGate extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Could not load your staff profile: '
-                          '${profileSnapshot.error}',
+                          'Could not load your staff profile: ${profileSnapshot.error}',
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: () async {
-                            await FirebaseAuth.instance.signOut();
-                          },
+                          onPressed: () => authService.signOut(),
                           child: const Text('Sign out'),
                         ),
                       ],
@@ -115,9 +102,7 @@ class AuthGate extends StatelessWidget {
                       const Text('This staff account has been deactivated.'),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () async {
-                          await FirebaseAuth.instance.signOut();
-                        },
+                        onPressed: () => authService.signOut(),
                         child: const Text('Sign out'),
                       ),
                     ],
@@ -127,10 +112,9 @@ class AuthGate extends StatelessWidget {
             }
 
             if (staffUser.role.toLowerCase() == 'admin') {
-              return AdminPage(user: staffUser);
+              return AdminDashboardView(user: staffUser);
             }
-
-            return InvigilatorPage(user: staffUser);
+            return InvigilatorDashboardView(user: staffUser);
           },
         );
       },

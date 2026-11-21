@@ -7,8 +7,7 @@ class StaffUser {
   final String faculty;
   final bool isActive;
   final String? lastLoginAt;
-  final String?
-  avatarPath; // Holds either a local file path or Firestore Base64 string
+  final String? avatarPath;
 
   StaffUser({
     required this.docId,
@@ -29,7 +28,6 @@ class StaffUser {
       name: (map['name'] ?? '').toString().trim(),
       email: (map['email'] ?? '').toString().trim(),
       role: (map['role'] ?? 'Invigilator').toString().trim(),
-      // Handles both 'Faculty' (capital F in Firestore) and 'faculty' and trims leading spaces
       faculty: (map['Faculty'] ?? map['faculty'] ?? '').toString().trim(),
       isActive: map['isActive'] ?? true,
       lastLoginAt: map['lastLoginAt']?.toString(),

@@ -2,18 +2,37 @@
 EXORA is a role-based Flutter and Firebase mobile application for university examination supervision, invigilator duty assignments, and staff profile management.
 
 ## Architecture (MVVM)
-The application is structured using the **Model–View–ViewModel (MVVM)** pattern with a dedicated **Service** layer so UI widgets do not interact directly with Firebase:
+The application follows a **feature-based Model–View–ViewModel (MVVM)** architecture[cite: 7, 54] with **Service Interfaces**[cite: 12, 13] and centralized **Dependency Injection (`GetIt`)**[cite: 14, 35, 37, 41] so UI widgets remain decoupled from Firebase data sources[cite: 11, 12]:
 
+```text
 lib/
-├── constants/                  # App color palette and theme constants
-├── features/                   # Feature-based Views and ViewModels
-│   ├── auth/                   # Login, Forgot Password, and AuthGate role routing
-│   ├── dashboard/              # Role-based Admin and Invigilator dashboards
-│   ├── invigilator_management/ # Invigilator list, assignment, and discharge flows
-│   └── profile/                # Profile viewing, avatar upload, and password update
-├── models/                     # Plain Dart data models (StaffUser, ExamAssignment)
-├── services/                   # FirebaseAuth and Cloud Firestore data access layer
-└── widgets/                    # Reusable UI components
+├── main.dart                       # App entry point & Firebase/DI initialization[cite: 7, 42, 54]
+├── firebase_options.dart           # Platform-specific Firebase configuration[cite: 57]
+├── app/                            # Application-wide setup & wiring[cite: 7, 35, 54]
+│   ├── app.dart                    # MaterialApp & theme configuration[cite: 7, 14, 54]
+│   ├── dependencies.dart           # Centralized GetIt Service Locator (DI)[cite: 14, 35, 37, 41]
+│   └── router.dart                 # Named route navigation & ViewModel injection[cite: 7, 35, 54]
+├── core/                           # Shared infrastructure, models & UI components[cite: 7, 36, 54]
+│   ├── models/                     # Shared domain models (StaffUser)[cite: 7, 18, 54]
+│   ├── services/                   # Shared service contracts & implementations (AuthService)[cite: 7, 12, 54]
+│   ├── utils/                      # App color palette & theme constants (AppColors)[cite: 7, 54]
+│   └── widgets/                    # Reusable UI widgets shared across screens[cite: 36]
+└── features/                       # Self-contained feature modules[cite: 7, 54]
+    ├── authentication/             # Login, Forgot Password, and AuthGate role routing
+    │   ├── viewmodels/             # AuthViewModel, LoginViewModel, ForgotPasswordViewModel
+    │   └── views/                  # AuthGateView, LoginView, ForgotPasswordView
+    ├── dashboard/                  # Role-based Admin and Invigilator dashboards
+    │   ├── viewmodels/             # DashboardViewModel
+    │   └── views/                  # AdminDashboardView, InvigilatorDashboardView, DashboardProfileCard
+    ├── invigilator_management/     # Invigilator list, assignment, and discharge flows
+    │   ├── models/                 # ExamAssignment domain model
+    │   ├── services/               # InvigilatorService interface & FirebaseInvigilatorService
+    │   ├── viewmodels/             # InvigilatorManagementViewModel
+    │   └── views/                  # InvigilatorManagementView, List, Assign & Discharge views
+    └── profile/                    # Profile viewing, avatar upload, and password update
+        ├── services/               # ProfileService interface & FirebaseProfileService
+        ├── viewmodels/             # ProfileViewModel
+        └── views/                  # ProfileView, EditProfileView
 
 ## Installation & Setup
 
@@ -62,5 +81,7 @@ Firebase Authentication persists the signed-in session across app restarts until
 Note: Legacy passwordHash fields in Firestore are no longer used for authentication and should be removed from staff documents. A Firestore document alone does not grant login access without a matching Firebase Authentication user.
 
 ### 4. Test Accounts
+```bash
 # Admin--> Email: laini@graduate.utm.my  Password: admin001
 # Invigilator--> Email: koryee.heng@graduate.utm.my   Password: staff001
+```

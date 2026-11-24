@@ -1,11 +1,66 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:map_app/features/auth/forgot_password_view.dart';
-import 'package:map_app/features/auth/login_view.dart';
+
+import 'package:map_app/app/dependencies.dart';
+import 'package:map_app/app/router.dart';
+import 'package:map_app/core/models/staff_user.dart';
+import 'package:map_app/core/services/auth_service.dart';
+import 'package:map_app/features/authentication/viewmodels/forgot_password_viewmodel.dart';
+import 'package:map_app/features/authentication/viewmodels/login_viewmodel.dart';
+import 'package:map_app/features/authentication/views/forgot_password_view.dart';
+import 'package:map_app/features/authentication/views/login_view.dart';
+
+class MockAuthService implements AuthService {
+  @override
+  Stream<User?> get authStateChanges => const Stream.empty();
+
+  @override
+  Future<void> configureWebPersistence() async {}
+
+  @override
+  Future<void> login({required String email, required String password}) async {}
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {}
+
+  @override
+  Future<StaffUser> fetchStaffProfile(String email) async {
+    return StaffUser(
+      docId: 'doc1',
+      staffId: 'admin123',
+      name: 'Test User',
+      email: email,
+      role: 'Admin',
+      faculty: 'FC',
+    );
+  }
+
+  @override
+  Future<void> signOut() async {}
+}
 
 void main() {
+  late MockAuthService mockAuthService;
+
+  setUp(() async {
+    await dependency.reset();
+    mockAuthService = MockAuthService();
+
+    dependency.registerLazySingleton<AuthService>(() => mockAuthService);
+    dependency.registerFactory<LoginViewModel>(
+      () => LoginViewModel(dependency<AuthService>()),
+    );
+    dependency.registerFactory<ForgotPasswordViewModel>(
+      () => ForgotPasswordViewModel(dependency<AuthService>()),
+    );
+  });
+
   Widget createTestWidget() {
-    return const MaterialApp(home: LoginView());
+    return MaterialApp(
+      onGenerateRoute: AppRouter.generateRoute,
+      home: LoginView(viewModel: dependency<LoginViewModel>()),
+    );
   }
 
   group('LoginView widget tests', () {

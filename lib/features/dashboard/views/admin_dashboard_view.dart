@@ -48,6 +48,14 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
     );
   }
 
+  void _openCollectionOverview({String examId = 'exam001'}) {
+    Navigator.pushNamed(
+      context,
+      AppRouter.collectionAssignment,
+      arguments: {'user': widget.viewModel.user, 'examId': examId},
+    );
+  }
+
   Future<void> _handleLogout() async {
     final success = await widget.viewModel.signOut();
     if (!mounted) return;
@@ -83,7 +91,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         final user = widget.viewModel.user;
         final greetingSuffix = user.staffId == 'admin123'
             ? 'MR ALI.'
-            : '${user.name.split(' ').first}.';
+            : '${user.name.split(' ').first.toUpperCase()}.';
 
         return Scaffold(
           key: const Key('admin_page'),
@@ -161,65 +169,37 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                           ),
                           const SizedBox(height: 16),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 child: DashboardActionItem(
-                                  itemKey: const Key('admin_action_qr_scanner'),
+                                  itemKey: const Key(
+                                    'admin_action_attendance_record',
+                                  ),
                                   icon: const Icon(
-                                    Icons.qr_code_scanner_rounded,
+                                    Icons.account_box_rounded,
                                     color: AppColors.primaryBlue,
                                     size: 28,
                                   ),
-                                  label: 'QR\nScanner',
-                                  onTap: () => _handleAction('QR Scanner'),
-                                ),
-                              ),
-                              Expanded(
-                                child: DashboardActionItem(
-                                  itemKey: const Key(
-                                    'admin_action_attendance_analysis',
-                                  ),
-                                  icon: const Icon(
-                                    Icons.bar_chart_rounded,
-                                    color: Color(0xFF2563EB),
-                                    size: 28,
-                                  ),
-                                  label: 'Attendance\nAnalysis',
+                                  label: 'Attendance\nRecord',
                                   onTap: () =>
-                                      _handleAction('Attendance Analysis'),
+                                      _handleAction('Attendance Record'),
                                 ),
                               ),
                               Expanded(
                                 child: DashboardActionItem(
                                   itemKey: const Key(
-                                    'admin_action_attendance_report',
+                                    'admin_action_script_tracking',
                                   ),
                                   icon: const Icon(
-                                    Icons.insert_drive_file_outlined,
-                                    color: Color(0xFF3B82F6),
-                                    size: 28,
-                                  ),
-                                  label: 'Attendance\nReport',
-                                  onTap: () =>
-                                      _handleAction('Attendance Report'),
-                                ),
-                              ),
-                              Expanded(
-                                child: DashboardActionItem(
-                                  itemKey: const Key(
-                                    'admin_action_invigilator_management',
-                                  ),
-                                  icon: const Icon(
-                                    Icons.manage_accounts_outlined,
+                                    Icons.list_alt_rounded,
                                     color: Color(0xFF1D4ED8),
                                     size: 28,
                                   ),
-                                  label: 'Invigilator\nManagement',
-                                  onTap: () => Navigator.pushNamed(
-                                    context,
-                                    AppRouter.invigilatorManagement,
+                                  label: 'Answer Script\nTracking',
+                                  onTap: () => _openCollectionOverview(
+                                    examId: 'exam001',
                                   ),
                                 ),
                               ),
@@ -227,7 +207,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                           ),
                           const SizedBox(height: 28),
                           const Text(
-                            'Upcoming Exam',
+                            'Exam Hall Overview',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -236,19 +216,28 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                           ),
                           const SizedBox(height: 14),
                           ExamCard(
-                            courseCode: 'SECJ3553',
+                            courseCode: 'SECJ 3553',
                             courseTitle: 'ARTIFICIAL INTELLIGENCE',
-                            onTap: () => _handleAction('SECJ3553'),
+                            date: '25 November 2026',
+                            venue: 'Dewan Sultan Iskandar',
+                            onTap: () =>
+                                _openCollectionOverview(examId: 'exam001'),
                           ),
                           ExamCard(
-                            courseCode: 'SECJ3623',
+                            courseCode: 'SECJ 3623',
                             courseTitle: 'MOBILE APPLICATION DEVELOPMENT',
-                            onTap: () => _handleAction('SECJ3623'),
+                            date: '28 November 2026',
+                            venue: 'Dewan Sultan Iskandar',
+                            onTap: () =>
+                                _openCollectionOverview(examId: 'exam001'),
                           ),
                           ExamCard(
-                            courseCode: 'SECV3104',
+                            courseCode: 'SECV 3104',
                             courseTitle: 'APPLICATION DEVELOPMENT',
-                            onTap: () => _handleAction('SECV3104'),
+                            date: '5 October 2026',
+                            venue: 'MPK 1, N28A',
+                            onTap: () =>
+                                _openCollectionOverview(examId: 'exam001'),
                           ),
                           const SizedBox(height: 24),
                           Center(

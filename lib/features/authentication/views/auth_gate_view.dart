@@ -3,53 +3,45 @@ import 'package:flutter/material.dart';
 import '../../../app/dependencies.dart';
 import '../../dashboard/views/admin_dashboard_view.dart';
 import '../../dashboard/views/invigilator_dashboard_view.dart';
+import '../../dashboard/views/lead_invigilator_dashboard_view.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import 'login_view.dart';
 
-class AuthGateView extends StatelessWidget {
+class AuthGateView extends StatefulWidget {
   final AuthViewModel viewModel;
 
   const AuthGateView({super.key, required this.viewModel});
 
   @override
+  State<AuthGateView> createState() => _AuthGateViewState();
+}
+
+class _AuthGateViewState extends State<AuthGateView> {
+  @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: viewModel,
+      listenable: widget.viewModel,
       builder: (context, _) {
-        if (viewModel.isLoading) {
+        if (widget.viewModel.isLoading) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        if (viewModel.errorMessage != null) {
-          return Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(viewModel.errorMessage!, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: viewModel.signOut,
-                      child: const Text('Sign out'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-
-        final user = viewModel.currentUser;
+        final user = widget.viewModel.currentUser;
         if (user == null) {
           return LoginView(viewModel: dependency());
         }
 
-        if (user.role.toLowerCase() == 'admin') {
+        final roleLower = user.role.trim().toLowerCase();
+        if (roleLower == 'admin') {
           return AdminDashboardView(user: user, viewModel: dependency());
+        }
+        if (roleLower == 'lead invigilator') {
+          return LeadInvigilatorDashboardView(
+            user: user,
+            viewModel: dependency(),
+          );
         }
         return InvigilatorDashboardView(user: user, viewModel: dependency());
       },

@@ -22,6 +22,7 @@ lib/
     │   ├── viewmodels/             # AuthViewModel, LoginViewModel, ForgotPasswordViewModel
     │   └── views/                  # AuthGateView, LoginView, ForgotPasswordView
     ├── dashboard/                  # Role-based Admin and Invigilator dashboards
+    
     │   ├── viewmodels/             # DashboardViewModel
     │   └── views/                  # AdminDashboardView, InvigilatorDashboardView, DashboardProfileCard
     ├── invigilator_management/     # Invigilator list, assignment, and discharge flows

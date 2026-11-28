@@ -5,10 +5,10 @@ import '../core/services/firebase_auth_service.dart';
 import '../features/authentication/viewmodels/auth_viewmodel.dart';
 import '../features/authentication/viewmodels/forgot_password_viewmodel.dart';
 import '../features/authentication/viewmodels/login_viewmodel.dart';
+import '../features/collection_assignment/services/collection_assignment_service.dart';
+import '../features/collection_assignment/services/firebase_collection_assignment_service.dart';
+import '../features/collection_assignment/viewmodels/collection_assignment_viewmodel.dart';
 import '../features/dashboard/viewmodels/dashboard_viewmodel.dart';
-import '../features/invigilator_management/services/firebase_invigilator_service.dart';
-import '../features/invigilator_management/services/invigilator_service.dart';
-import '../features/invigilator_management/viewmodels/invigilator_management_viewmodel.dart';
 import '../features/profile/services/firebase_profile_service.dart';
 import '../features/profile/services/profile_service.dart';
 import '../features/profile/viewmodels/profile_viewmodel.dart';
@@ -21,8 +21,8 @@ void init() {
   dependency.registerLazySingleton<ProfileService>(
     () => FirebaseProfileService(),
   );
-  dependency.registerLazySingleton<InvigilatorService>(
-    () => FirebaseInvigilatorService(),
+  dependency.registerLazySingleton<CollectionAssignmentService>(
+    () => FirebaseCollectionAssignmentService(),
   );
 
   // 2. ViewModels
@@ -47,7 +47,9 @@ void init() {
       dependency<AuthService>(),
     ),
   );
-  dependency.registerFactory<InvigilatorManagementViewModel>(
-    () => InvigilatorManagementViewModel(dependency<InvigilatorService>()),
+  dependency.registerFactory<CollectionAssignmentViewModel>(
+    () => CollectionAssignmentViewModel(
+      dependency<CollectionAssignmentService>(),
+    ),
   );
 }

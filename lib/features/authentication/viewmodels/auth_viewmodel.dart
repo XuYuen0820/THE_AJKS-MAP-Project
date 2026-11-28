@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../../core/models/staff_user.dart';
-import '../../../core/services/auth_service.dart';
+import '../../../../core/models/staff_user.dart';
+import '../../../../core/services/auth_service.dart';
 
 class AuthViewModel extends ChangeNotifier {
   final AuthService _authService;
